@@ -2,7 +2,13 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const origin = request.nextUrl.origin;
+  // Get origin from headers for proper Vercel proxy detection
+  const origin =
+    request.headers.get("x-forwarded-proto") &&
+    request.headers.get("x-forwarded-host")
+      ? `${request.headers.get("x-forwarded-proto")}://${request.headers.get("x-forwarded-host")}`
+      : request.nextUrl.origin;
+
   const { searchParams } = new URL(request.url);
   const next = searchParams.get("next") ?? "/bookmarks";
 
