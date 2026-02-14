@@ -2,22 +2,25 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
-  // Get origin from Host header (works in Vercel) with protocol from x-forwarded-proto
-  const protocol = request.headers.get("x-forwarded-proto") || "https";
-  const host = request.headers.get("host") || request.nextUrl.host;
-  const origin = `${protocol}://${host}`;
+  // For Vercel: use VERCEL_URL if available
+  // For local: use request headers
+  let origin: string;
+  
+  if (process.env.VERCEL_URL) {
+    // We're on Vercel
+    const protocol = process.env.VERCEL_ENV === "production" ? "https" : "http";
+    origin = `${protocol}://${process.env.VERCEL_URL}`;
+  } else {
+    // Local development
+    const protocol = request.headers.get("x-forwarded-proto") || "http";
+    const host = request.headers.get("host") || request.nextUrl.host;
+    origin = `${protocol}://${host}`;
+  }
 
   const { searchParams } = new URL(request.url);
   const next = searchParams.get("next") ?? "/bookmarks";
 
-  console.log("🔐 Signin Route Debug:", {
-    origin,
-    protocol,
-    host,
-    "x-forwarded-proto": request.headers.get("x-forwarded-proto"),
-    "x-forwarded-host": request.headers.get("x-forwarded-host"),
-    "request.nextUrl.origin": request.nextUrl.origin,
-  });
+  console.log("🔐 Signin Route - Origin:", origin, "VERCEL_URL:", process.env.VERCEL_URL);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
